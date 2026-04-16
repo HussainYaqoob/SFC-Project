@@ -1,4 +1,4 @@
-# SFC — Secure Financial Corporation Bank Project
+# IT8399 — Secure Financial Corporation Bank (SFC) Project
 
 This repository contains all working files, configurations, and documentation used throughout the **SFC Secure Enterprise Network Project**.
 Everything here documents the design, implementation, verification, and backups for a secure multi-site banking network built and tested in a lab environment.
