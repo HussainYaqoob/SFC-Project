@@ -1,0 +1,67 @@
+hostname HB-R1
+no ip domain lookup
+
+interface loopback 0
+ip address 1.1.18.1 255.255.255.255
+no shutdown
+
+int g0/0
+ip add 172.18.0.1 255.255.255.252
+no shut
+description Link to HB-R2
+mpls ip
+
+int g0/2
+ip add 172.18.0.6 255.255.255.252
+no shut
+description Link HQ-R2
+ip vrf forwarding HQ-BR1
+
+int g0/3
+ip add 172.18.0.10 255.255.255.252
+no shut
+description Link to HQ-R1
+ip vrf forwarding HQ-BR1
+
+mpls ldp router-id loopback0 force
+
+ip vrf HQ-BR1
+rd 18:16
+route-target 16:17
+
+router OSPF 18
+ network 1.1.18.1 0.0.0.0 area 0
+ network 172.18.0.0 0.0.0.3 area 0
+ 
+router bgp 18
+ bgp router-id 1.1.18.1
+ bgp log-neighbor-changes
+ no bgp default ipv4-unicast
+ neighbor 1.1.18.2 remote-as 18
+ neighbor 1.1.18.2 update-source Loopback0
+ !
+ address-family ipv4
+  neighbor 1.1.18.2 activate
+ exit-address-family
+ !
+ address-family vpnv4
+  neighbor 1.1.18.2 activate
+  neighbor 1.1.18.2 send-community both
+ exit-address-family
+ !
+ address-family ipv4 vrf HQ-BR1
+  redistribute eigrp 16
+ exit-address-family
+
+
+router eigrp MPLS
+ !
+ address-family ipv4 unicast vrf HQ-BR1 autonomous-system 16
+  !
+  topology base
+   redistribute bgp 18 metric 64 1000 255 1 1500
+  exit-af-topology
+  network 172.18.0.4 0.0.0.3
+  network 172.18.0.8 0.0.0.3
+  eigrp router-id 1.1.18.1
+ exit-address-family

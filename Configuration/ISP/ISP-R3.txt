@@ -1,0 +1,25 @@
+hostname ISP-R3
+no ip domain lookup
+
+int e0/0
+ip add 172.19.0.13 255.255.255.252
+no shut
+description Link to ISP-R4
+
+int e0/1
+ip add 172.19.0.2 255.255.255.252
+no shut
+description Link ISP-R1
+
+int e0/2
+ip add 32.4.0.10 255.255.255.252
+no shut
+description Link to BR1-FW2
+
+
+router eigrp ISP
+address-family ipv4 unicast autonomous-system 19
+ network 32.4.0.8     0.0.0.3
+ network 172.19.0.0   0.0.0.3
+ network 172.19.0.12  0.0.0.3
+

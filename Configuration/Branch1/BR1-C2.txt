@@ -1,0 +1,152 @@
+hostname BR1-C2
+no ip domain lookup
+
+ key chain BR1-OSPF
+ key 17
+ key-string Branch1@OSPF
+ cryptographic-algorithm hmac-sha-256
+ exit
+ exit
+
+int range g1/0, g0/0
+no switchport
+no shut
+description Link to BR1-C1
+channel-group 1 mode desirable
+
+interface port 1
+no switchport
+ip add 172.17.0.26 255.255.255.252
+no shut 
+description Link to HQ-C2
+ip ospf authentication key-chain BR1-OSPF
+
+int g0/3
+no switchport
+ip add 172.17.0.22 255.255.255.252
+no shut
+description Link to BR1-R2
+ip ospf authentication key-chain BR1-OSPF
+
+vlan 10
+name IT
+
+vlan 20
+name Administration
+
+vlan 30
+name Finance 
+
+vlan 40
+name HR
+
+Vlan 99
+Name Management
+
+Vlan 999
+name Black-Hole
+
+ip routing
+
+interface vlan 10
+ ip address 172.17.10.2 255.255.255.0
+ description Link for IT VLAN
+ glbp 10 ip 172.17.10.254
+ glbp 10 load-balancing round-robin
+ no shutdown
+
+interface vlan 20
+ ip address 172.17.20.2 255.255.255.0
+ description Link for Administration VLAN
+ glbp 20 ip 172.17.20.254
+ glbp 20 priority 120
+ glbp 20 preempt
+ glbp 20 load-balancing round-robin
+ no shutdown
+
+interface vlan 30
+ ip address 172.17.30.2 255.255.255.0
+ description Link for Finance VLAN
+ glbp 30 ip 172.17.30.254
+ glbp 30 load-balancing round-robin
+ no shutdown
+
+interface vlan 40
+ ip address 172.17.40.2 255.255.255.0
+ description Link for HR VLAN
+ glbp 40 ip 172.17.40.254
+ glbp 40 priority 120
+ glbp 40 preempt
+ glbp 40 load-balancing round-robin
+ no shutdown
+
+interface vlan 99
+ ip address 172.17.99.2 255.255.255.0
+ description Link for Management VLAN
+ glbp 99 ip 172.17.99.254
+ glbp 99 load-balancing round-robin
+ no shutdown
+
+int range g0/1, g0/2
+channel-group 2 mode desirable
+description Link to BR1-SW2
+no shut
+
+interface port 2
+ switchport trunk encapsulation dot1q
+ switchport mode trunk
+ switchport trunk native vlan 99
+ switchport nonegotiate
+ switchport trunk allowed vlan 10,20,30,40,99
+ description Link to BR1-SW2
+ no shut
+
+interface range g1/1-3
+ description UNUSED PORT
+ switchport access vlan 999
+ switchport mode access
+ shutdown
+
+interface g1/2
+ switchport trunk encapsulation dot1q
+ switchport mode trunk
+ switchport trunk native vlan 99
+ switchport nonegotiate
+ switchport trunk allowed vlan 10,20,30,40,99
+ description Link to BR1-SW1
+
+service password-encryption
+
+ip domain name SFC.com
+username BR1-C2 privilege 15 algorithm-type scrypt secret br1c2@shh
+
+crypto key generate rsa modulus 2048
+
+ip ssh version 2
+ip ssh time-out 90
+ip ssh authentication-retries 5
+
+ line vty 0 4
+privilege level 15
+exec-timeout 7 0
+login local
+transport input ssh
+exit
+
+ line console 0
+ exec-timeout 5 0
+ logging synchronous
+
+ line aux 0
+ login local
+ exec-timeout 5 0
+
+router ospf 17
+router-id 1.3.17.2
+auto-cost reference-bandwidth 1000
+network 172.17.0.16 0.0.0.15 area 17
+network 172.17.10.0 0.0.0.255 area 17
+network 172.17.20.0 0.0.0.255 area 17
+network 172.17.30.0 0.0.0.255 area 17
+network 172.17.40.0 0.0.0.255 area 17
+network 172.17.99.0 0.0.0.255 area 17

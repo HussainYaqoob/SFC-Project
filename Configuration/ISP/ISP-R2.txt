@@ -1,0 +1,25 @@
+hostname ISP-R2
+no ip domain lookup
+
+int e0/0
+ip add 32.4.0.6 255.255.255.252
+no shut
+description Link to HQ-FW2
+
+int e0/2
+ip add 172.19.0.6 255.255.255.252
+no shut
+description Link ISP-R1
+
+int e0/3
+ip add 172.19.0.9 255.255.255.252
+no shut
+description Link to ISP-R4
+
+
+router eigrp ISP
+address-family ipv4 unicast autonomous-system 19
+ network 32.4.0.4    0.0.0.3
+ network 172.19.0.4  0.0.0.3
+ network 172.19.0.8  0.0.0.3
+

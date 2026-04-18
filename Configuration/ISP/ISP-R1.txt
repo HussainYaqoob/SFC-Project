@@ -1,0 +1,33 @@
+hostname ISP-R1
+no ip domain lookup
+
+int e0/0
+ip add 32.4.0.2 255.255.255.252
+no shut
+description Link to HQ-FW1
+
+int e0/1
+ip add 172.19.0.1 255.255.255.252
+no shut
+description Link ISP-R3
+
+int e0/2
+ip add 172.19.0.5 255.255.255.252
+no shut
+description Link to ISP-R2
+
+ip route 100.0.0.0 255.255.255.0 32.4.0.1
+
+router eigrp ISP
+ !
+ address-family ipv4 unicast autonomous-system 19
+  !
+  topology base
+   redistribute static
+  exit-af-topology
+  network 32.4.0.0 0.0.0.3
+  network 172.19.0.0 0.0.0.3
+  network 172.19.0.4 0.0.0.3
+ exit-address-family
+
+

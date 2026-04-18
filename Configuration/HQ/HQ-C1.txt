@@ -1,0 +1,208 @@
+hostname HQ-C1
+no ip domain lookup
+
+ key chain HQ-OSPF
+ key 16
+ key-string HQ@OSPF
+ cryptographic-algorithm hmac-sha-256
+ exit
+ exit
+
+int range g0/0, g0/1
+no switchport
+no shut
+channel-group 1 mode desirable
+description Link to HQ-C2
+
+interface port 1
+no switchport
+ip add 172.16.0.29 255.255.255.252
+no shut 
+description Link to HQ-C2
+ip ospf authentication key-chain HQ-OSPF
+
+int g0/2
+no switchport
+ip add 172.16.0.22 255.255.255.252
+no shut
+description Link to HQ-R1
+ip ospf authentication key-chain HQ-OSPF
+
+vlan 10
+name IT
+
+vlan 20
+name Administration
+
+vlan 30
+name Finance 
+
+vlan 40
+name HR
+
+vlan 50
+name Servers
+
+Vlan 99
+Name Management
+
+Vlan 999
+name Black-Hole
+
+ip routing
+
+interface vlan 10
+ ip address 172.16.10.1 255.255.255.0
+ description Link for IT VLAN
+ glbp 10 ip 172.16.10.254
+ glbp 10 priority 120
+ glbp 10 preempt
+ glbp 10 load-balancing round-robin
+ ip helper-address 172.16.50.10
+ ip helper-address 172.16.50.12
+ no shutdown
+
+interface vlan 20
+ ip address 172.16.20.1 255.255.255.0
+ description Link for Administration VLAN
+ glbp 20 ip 172.16.20.254
+ glbp 20 load-balancing round-robin
+ ip helper-address 172.16.50.10
+ ip helper-address 172.16.50.12
+ no shutdown
+
+interface vlan 30
+ ip address 172.16.30.1 255.255.255.0
+ description Link for Finance VLAN
+ glbp 30 ip 172.16.30.254
+ glbp 30 priority 120
+ glbp 30 preempt
+ glbp 30 load-balancing round-robin
+ ip helper-address 172.16.50.10
+ ip helper-address 172.16.50.12
+ no shutdown
+
+interface vlan 40
+ ip address 172.16.40.1 255.255.255.0
+ description Link for HR VLAN
+ glbp 40 ip 172.16.40.254
+ glbp 40 load-balancing round-robin
+ ip helper-address 172.16.50.10
+ ip helper-address 172.16.50.12
+ no shutdown
+
+interface vlan 50
+ ip address 172.16.50.1 255.255.255.0
+ description Link for Servers VLAN
+ glbp 50 ip 172.16.50.254
+ glbp 50 priority 120
+ glbp 50 preempt
+ glbp 50 load-balancing round-robin
+ no shutdown
+
+interface vlan 99
+ ip address 172.16.99.1 255.255.255.0
+ description Link for Management VLAN
+ glbp 99 ip 172.16.99.254
+ glbp 99 load-balancing round-robin
+ no shutdown
+
+interface g0/3
+ switchport trunk encapsulation dot1q
+ switchport mode trunk
+ switchport trunk native vlan 99
+ switchport nonegotiate
+ switchport trunk allowed vlan 10,20,30,40,50,99
+ description Link to HQ-SW1
+
+interface g1/0
+ description Link to HQ-Server
+ switchport access vlan 50
+ switchport mode access
+ switchport port-security maximum 5
+ switchport port-security mac-address sticky
+ switchport port-security aging time 120
+ switchport port-security
+ spanning-tree portfast
+ spanning-tree bpduguard enable
+ no shut
+
+interface g1/1
+ description Link to HQ-Server2
+ switchport access vlan 50
+ switchport mode access
+ switchport port-security maximum 5
+ switchport port-security mac-address sticky
+ switchport port-security aging time 120
+ switchport port-security
+ spanning-tree portfast
+ spanning-tree bpduguard enable
+ no shut
+
+interface g1/2
+ description UNUSED PORT
+ switchport access vlan 999
+ switchport mode access
+ shutdown
+
+interface g1/3
+ switchport trunk encapsulation dot1q
+ switchport mode trunk
+ switchport trunk native vlan 99
+ switchport nonegotiate
+ switchport trunk allowed vlan 10,20,30,40,50,99
+ description Link to HQ-SW2
+
+service password-encryption
+
+ip domain name SFC.com
+username HQ-C1 privilege 15 algorithm-type scrypt secret hqc1@shh
+
+crypto key generate rsa modulus 2048
+
+ip ssh version 2
+ip ssh time-out 90
+ip ssh authentication-retries 5
+
+ line vty 0 4
+privilege level 15
+exec-timeout 7 0
+login authentication HQ-server
+transport input ssh
+exit
+
+ line console 0
+ exec-timeout 5 0
+ logging synchronous
+ login authentication HQ-server
+
+ line aux 0
+ login local
+ exec-timeout 5 0
+
+router ospf 16
+router-id 1.3.16.1
+auto-cost reference-bandwidth 1000
+network 172.16.0.16 0.0.0.15 area 16
+network 172.16.10.0 0.0.0.255 area 16
+network 172.16.20.0 0.0.0.255 area 16
+network 172.16.30.0 0.0.0.255 area 16
+network 172.16.40.0 0.0.0.255 area 16
+network 172.16.50.0 0.0.0.255 area 16
+network 172.16.99.0 0.0.0.255 area 16
+
+
+logging host 172.16.50.10
+logging trap debugging
+service timestamps log datetime msec
+logging on
+
+aaa new-model
+
+ip radius source-interface vlan 50
+
+aaa authentication login HQ-server group radius local
+
+radius server HQ-server
+ address ipv4 172.16.50.10 auth-port 1812 acct-port 1813
+ key P@ssw0rd

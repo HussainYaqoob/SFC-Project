@@ -1,0 +1,128 @@
+hostname BR1-R1
+no ip domain lookup
+
+ key chain BR1-OSPF
+ key 17
+ key-string Branch1@OSPF
+ cryptographic-algorithm hmac-sha-256
+ exit
+ exit
+
+interface loopback 0
+ip address 1.2.17.1 255.255.255.255
+no shut
+
+int g0/0
+ip add 172.17.0.13 255.255.255.252
+no shut
+description Link to BR1-R2
+ip ospf authentication key-chain BR1-OSPF
+
+int G0/1
+ip add 172.18.0.13 255.255.255.252
+no shut
+description Link HB-R2
+
+int g0/2
+ip add 172.17.0.6 255.255.255.252
+no shut
+description Link to BR1-FW1
+
+int g0/3
+ip add 172.17.0.17 255.255.255.252
+no shut
+description Link to BR1-C1
+ip ospf authentication key-chain BR1-OSPF
+
+interface Tunnel10
+ description MPLS VPN Tunnel
+ ip unnumbered Loopback0
+ ip ospf network point-to-point
+ ip ospf 17 area 0
+ tunnel source Loopback0
+ tunnel destination 1.2.16.1
+ tunnel protection ipsec profile MPLS-PROFILE
+ tunnel mode gre ip
+ ip ospf cost 10
+ip ospf hello-interval 1
+ip ospf dead-interval 3
+
+crypto ikev2 proposal MPLS-PROP
+ encryption aes-cbc-256
+ integrity sha256
+ group 14
+
+crypto ikev2 policy MPLS-POLICY
+ proposal MPLS-PROP
+
+crypto ikev2 keyring MPLS-KEYRING
+ peer HQ-R1
+  address 1.2.16.1
+  pre-shared-key MPLSKEY
+
+crypto ikev2 profile MPLS-IKEV2
+ match identity remote address 1.2.16.1 255.255.255.255
+ authentication remote pre-share
+ authentication local pre-share
+ keyring local MPLS-KEYRING
+ dpd 10 3 periodic
+
+crypto ipsec transform-set MPLS-IPSEC esp-aes 256 esp-sha-hmac
+ mode tunnel
+
+crypto ipsec profile MPLS-PROFILE
+ set transform-set MPLS-IPSEC
+ set ikev2-profile MPLS-IKEV2
+
+service password-encryption
+
+ip domain-name SFC.com
+username BR1-R1 privilege 15 algorithm-type scrypt secret br1r1@ssh
+
+crypto key generate rsa modulus 2048
+
+ip ssh version 2
+ip ssh time-out 90
+ip ssh authentication-retries 5
+
+ line vty 0 4
+privilege level 15
+exec-timeout 7 0
+login local
+transport input ssh
+exit
+
+ line console 0
+ exec-timeout 5 0
+ logging synchronous
+
+ line aux 0
+ login local
+ exec-timeout 5 0
+
+router ospf 17
+router-id 1.2.17.1
+auto-cost reference-bandwidth 1000
+network 172.17.0.0 0.0.0.31 area 17
+area 17 range 172.17.0.0 255.255.0.0 advertise
+
+router eigrp BR1-HQ
+ !
+ address-family ipv4 unicast autonomous-system 17
+  !
+  topology base
+  exit-af-topology
+  network 1.2.17.1 0.0.0.0
+  network 172.18.0.12 0.0.0.3
+  eigrp router-id 1.2.17.1
+
+ip sla 1
+ icmp-echo 172.17.0.5 source-interface g0/2
+ frequency 5
+ip sla schedule 1 life forever start-time now
+
+track 1 ip sla 1 reachability
+
+ip route 172.16.0.0 255.255.0.0 172.17.0.5 200 track 1
+ip route 172.16.0.0 255.255.0.0 172.17.0.14 250 
+

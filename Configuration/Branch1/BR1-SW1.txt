@@ -1,0 +1,119 @@
+hostname BR1-SW1
+no ip domain lookup
+
+int vlan 99
+ip add 172.17.99.101 255.255.255.0
+no shut
+description Link to Management VLAN
+
+ip default-gateway 172.17.99.254
+
+interface g0/0
+ switchport access vlan 10
+ switchport mode access
+ switchport port-security maximum 5
+ switchport port-security mac-address sticky
+ switchport port-security aging time 120
+ switchport port-security
+ spanning-tree portfast
+ spanning-tree bpduguard enable
+ description Link to BR1-PC1
+ no shut
+
+int range g0/1, g0/2
+ channel-group 2 mode desirable
+ description Link to BR1-C1
+ no shut
+
+interface port 2
+ switchport trunk encapsulation dot1q
+ switchport mode trunk
+ switchport trunk native vlan 99
+ switchport nonegotiate
+ switchport trunk allowed vlan 10,20,30,40,99
+ description Link to BR1-C1
+ no shut 
+
+interface range g1/0-1
+ channel-group 1 mode active
+ description Link to BR1-SW2
+
+interface port 1
+ switchport trunk encapsulation dot1q
+ switchport mode trunk
+ switchport trunk native vlan 99
+ switchport nonegotiate
+ switchport trunk allowed vlan 10,20,30,40,99
+ description Link to BR1-SW2
+
+interface g0/3
+ switchport trunk encapsulation dot1q
+ switchport mode trunk
+ switchport trunk native vlan 99
+ switchport nonegotiate
+ switchport trunk allowed vlan 10,20,30,40,99
+ description Link to BR1-C1
+ no shut
+
+interface g1/2
+ switchport trunk encapsulation dot1q
+ switchport mode trunk
+ switchport trunk native vlan 99
+ switchport nonegotiate
+ switchport trunk allowed vlan 10,20,30,40,99
+ description Link to BR1-C2
+
+interface g1/3
+ description UNUSED PORT
+ switchport access vlan 999
+ switchport mode access
+ shutdown
+
+vtp version 2
+vtp mode server
+vtp domain Branch1
+vtp password Branch1@vtp
+
+vlan 10
+name IT
+
+vlan 20
+name Administration
+
+vlan 30
+name Finance 
+
+vlan 40
+name HR
+
+Vlan 99
+Name Management
+
+Vlan 999
+name Black-Hole
+
+service password-encryption
+
+ip domain name SFC.com
+username BR1-SW1 privilege 15 algorithm-type scrypt secret br1sw1@shh
+
+crypto key generate rsa modulus 2048
+
+ip ssh version 2
+ip ssh time-out 90
+ip ssh authentication-retries 5
+
+ line vty 0 4
+privilege level 15
+exec-timeout 7 0
+login local
+transport input ssh
+exit
+
+ line console 0
+ exec-timeout 5 0
+ logging synchronous
+
+ line aux 0
+ login local
+ exec-timeout 5 0

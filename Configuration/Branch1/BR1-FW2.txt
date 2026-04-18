@@ -1,0 +1,84 @@
+New Pass: P@ssw0rd
+
+hostname BR1-FW2
+banner motd AUTHORIZED ACCESS ONLY - Secure Financial Corporation Bank (SFC) - ALL ACTIVITY MONITORED
+
+domain-name SFC.com
+
+int g0/0
+ip address 172.17.0.2 255.255.255.252
+nameif firewall
+security-level 100
+ no shut
+description Link to BR1-FW1
+
+int g0/1
+ip address 172.17.0.9 255.255.255.252
+nameif inside
+security-level 100
+ no shut
+description Link to BR1-R2
+
+int g0/2
+ip address 32.4.0.9 255.255.255.252
+nameif outside
+security-level 0
+ no shut
+description Link to ISP-R3
+
+route outside 0.0.0.0 0.0.0.0 32.4.0.10
+
+router ospf 17
+router-id 1.1.17.2
+network 172.17.0.0 255.255.255.240 area 17
+default-information originate metric 50
+
+object-group network BR1-NETS
+ network-object 172.17.10.0 255.255.255.0
+ network-object 172.17.20.0 255.255.255.0
+ network-object 172.17.30.0 255.255.255.0
+ network-object 172.17.40.0 255.255.255.0
+
+object-group network HQ-NETS
+ network-object 172.16.10.0 255.255.255.0
+ network-object 172.16.20.0 255.255.255.0
+ network-object 172.16.30.0 255.255.255.0
+ network-object 172.16.40.0 255.255.255.0
+ network-object 172.16.50.0 255.255.255.0
+
+
+access-list VPN-ACL extended permit ip object-group BR1-NETS object-group HQ-NETS
+
+crypto ikev2 policy 20
+ encryption aes-256
+ integrity sha
+ group 14
+ prf sha
+ lifetime seconds 3600
+
+crypto ipsec ikev2 ipsec-proposal VPN-SET
+ protocol esp encryption aes-256
+ protocol esp integrity sha-1
+
+crypto map VPN-MAP 20 match address VPN-ACL
+crypto map VPN-MAP 20 set peer 32.4.0.5
+crypto map VPN-MAP 20 set ikev2 ipsec-proposal VPN-SET
+
+
+crypto ikev2 enable outside
+crypto map VPN-MAP interface outside
+
+tunnel-group 32.4.0.5 type ipsec-l2l
+tunnel-group 32.4.0.5 ipsec-attributes
+ ikev2 remote-authentication pre-shared-key S2S-VPN
+ ikev2 local-authentication pre-shared-key S2S-VPN
+
+object network BR1-SUMMARY
+ subnet 172.17.0.0 255.255.0.0
+
+object network HQ-SUMMARY
+ subnet 172.16.0.0 255.255.0.0
+
+nat (inside,outside) source static BR1-SUMMARY BR1-SUMMARY destination static HQ-SUMMARY HQ-SUMMARY no-proxy-arp route-lookup
+
+nat (inside,outside) source dynamic BR1-NETS interface
