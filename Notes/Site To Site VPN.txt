@@ -1,0 +1,77 @@
+no nat (inside,outside) source dynamic INSIDE-NETS interface
+no object-group network INSIDE-NETS
+
+object network INSIDE-NET 
+subnet 172.16.0.0 255.255.0.0
+nat (inside,outside) dynamic interface
+
+crypto ikev1 policy 10
+ authentication pre-share
+ encryption  aes-256
+ hash sha
+ group 14
+ lifetime 3600
+
+crypto ipsec ikev1 transform-set VPN-SET  esp-aes-256 esp-sha-hmac
+
+access-list VPN-ACL extended permit ip 172.16.0.0 255.255.0.0 172.17.0.0 255.255.0.0
+
+crypto map VPN-MAP 10 match address VPN-ACL
+crypto map VPN-MAP 10 set ikev1 transform-set VPN-SET
+crypto map VPN-MAP 10 set peer 32.4.0.13
+crypto ikev1 enable outside
+crypto map VPN-MAP interface outside
+
+tunnel-group 32.4.0.13 type ipsec-l2l
+tunnel-group 32.4.0.13 ipsec-attributes
+ ikev1 pre-shared-key S2S-VPN
+
+object network HQ-NET
+ subnet 172.16.0.0 255.255.0.0
+object network BR1-NET
+ subnet 172.17.0.0 255.255.0.0
+
+
+nat (inside,outside) source static HQ-NET HQ-NET destination static BR1-NET BR1-NET no-proxy-arp route-lookup
+
+
+--------------------------------------------------
+
+no nat (inside,outside) source dynamic INSIDE-NETS interface
+no object-group network INSIDE-NETS
+
+object network INSIDE-NET 
+subnet 172.17.0.0 255.255.0.0
+nat (inside,outside) dynamic interface
+
+
+crypto ikev1 policy 10
+ authentication pre-share
+ encryption  aes-256
+ hash sha
+ group 14
+ lifetime 3600
+
+crypto ipsec ikev1 transform-set VPN-SET esp-aes-256 esp-sha-hmac
+
+access-list VPN-ACL extended permit ip  172.17.0.0 255.255.0.0 172.16.0.0 255.255.0.0
+
+
+crypto map VPN-MAP 10 match address VPN-ACL
+crypto map VPN-MAP 10 set ikev1 transform-set VPN-SET
+crypto map VPN-MAP 10 set peer 32.4.0.1
+crypto ikev1 enable outside
+crypto map VPN-MAP interface outside
+
+
+tunnel-group 32.4.0.1 type ipsec-l2l
+tunnel-group 32.4.0.1 ipsec-attributes
+ ikev1 pre-shared-key S2S-VPN
+
+object network HQ-NET
+ subnet 172.16.0.0 255.255.0.0
+object network BR1-NET
+ subnet 172.17.0.0 255.255.0.0
+
+
+nat (inside,outside) source static BR1-NET BR1-NET  destination static  HQ-NET HQ-NET  no-proxy-arp route-lookup

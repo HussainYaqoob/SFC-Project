@@ -1,0 +1,121 @@
+HQ-R1:
+
+crypto ikev2 proposal MPLS-PROP
+ encryption aes-cbc-256
+ integrity sha256
+ group 14
+
+crypto ikev2 policy MPLS-POLICY
+ proposal MPLS-PROP
+
+crypto ikev2 keyring MPLS-KEYRING
+ peer BR1-R1
+  address 1.2.17.1
+  pre-shared-key MPLSKEY
+
+crypto ikev2 profile MPLS-IKEV2
+ match identity remote address 1.2.17.1 255.255.255.255
+ authentication remote pre-share
+ authentication local pre-share
+ keyring local MPLS-KEYRING
+ dpd 10 3 periodic
+
+crypto ipsec transform-set MPLS-IPSEC esp-aes 256 esp-sha-hmac
+ mode tunnel
+
+crypto ipsec profile MPLS-PROFILE
+ set transform-set MPLS-IPSEC
+ set ikev2-profile MPLS-IKEV2
+
+--------------------------------------------------
+
+BR1-R1:
+
+crypto ikev2 proposal MPLS-PROP
+ encryption aes-cbc-256
+ integrity sha256
+ group 14
+
+crypto ikev2 policy MPLS-POLICY
+ proposal MPLS-PROP
+
+crypto ikev2 keyring MPLS-KEYRING
+ peer HQ-R1
+  address 1.2.16.1
+  pre-shared-key MPLSKEY
+
+crypto ikev2 profile MPLS-IKEV2
+ match identity remote address 1.2.16.1 255.255.255.255
+ authentication remote pre-share
+ authentication local pre-share
+ keyring local MPLS-KEYRING
+ dpd 10 3 periodic
+
+crypto ipsec transform-set MPLS-IPSEC esp-aes 256 esp-sha-hmac
+ mode tunnel
+
+crypto ipsec profile MPLS-PROFILE
+ set transform-set MPLS-IPSEC
+ set ikev2-profile MPLS-IKEV2
+
+-----------------------------------------------------
+
+HQ-R2:
+
+crypto ikev2 proposal MPLS-PROP
+ encryption aes-cbc-256
+ integrity sha256
+ group 14
+
+crypto ikev2 policy MPLS-POLICY
+ proposal MPLS-PROP
+
+crypto ikev2 keyring MPLS-KEYRING
+ peer BR1-R2
+  address 1.2.17.2
+  pre-shared-key MPLSKEY
+
+crypto ikev2 profile MPLS-IKEV2
+ match identity remote address 1.2.17.2 255.255.255.255
+ authentication remote pre-share
+ authentication local pre-share
+ keyring local MPLS-KEYRING
+ dpd 10 3 periodic
+
+crypto ipsec transform-set MPLS-IPSEC esp-aes 256 esp-sha-hmac
+ mode tunnel
+
+crypto ipsec profile MPLS-PROFILE
+ set transform-set MPLS-IPSEC
+ set ikev2-profile MPLS-IKEV2
+
+---------------------------------------------------------
+
+BR1-R2:
+
+crypto ikev2 proposal MPLS-PROP
+ encryption aes-cbc-256
+ integrity sha256
+ group 14
+
+crypto ikev2 policy MPLS-POLICY
+ proposal MPLS-PROP
+
+crypto ikev2 keyring MPLS-KEYRING
+ peer HQ-R2
+  address 1.2.16.2
+  pre-shared-key MPLSKEY
+
+crypto ikev2 profile MPLS-IKEV2
+ match identity remote address 1.2.16.2 255.255.255.255
+ authentication remote pre-share
+ authentication local pre-share
+ keyring local MPLS-KEYRING
+ dpd 10 3 periodic
+
+crypto ipsec transform-set MPLS-IPSEC esp-aes 256 esp-sha-hmac
+ mode tunnel
+
+crypto ipsec profile MPLS-PROFILE
+ set transform-set MPLS-IPSEC
+ set ikev2-profile MPLS-IKEV2
