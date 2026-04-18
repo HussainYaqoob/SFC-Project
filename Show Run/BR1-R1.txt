@@ -1,0 +1,203 @@
+
+*Mar 19 20:01:44.399: %SYS-5-CONFIG_I: Configured from console by console
+!
+! Last configuration change at 20:01:44 UTC Thu Mar 19 2026
+!
+version 15.9
+service timestamps debug datetime msec
+service timestamps log datetime msec
+service password-encryption
+!
+hostname BR1-R1
+!
+boot-start-marker
+boot-end-marker
+!
+!
+!
+no aaa new-model
+!
+!
+!
+mmi polling-interval 60
+no mmi auto-configure
+no mmi pvc
+mmi snmp-timeout 180
+!
+!
+!
+!
+!
+!
+!
+!
+!
+!
+!
+no ip domain lookup
+ip domain name SFC.com
+ip cef
+no ipv6 cef
+!
+multilink bundle-name authenticated
+!
+!
+!
+key chain BR1-OSPF
+ key 17
+  key-string 7 08035E4F071A0D4632243F340C
+  cryptographic-algorithm hmac-sha-256
+!
+!
+username BR1-R1 privilege 15 secret 9 $9$YWQMr.Rjj1beVv$dZ.c7BMVmcvmTIE6LA04p9dnzFiqSXHtJZP8QiuR8q2
+!
+redundancy
+!
+!
+track 1 ip sla 1 reachability
+!
+! 
+!
+crypto ikev2 proposal MPLS-PROP 
+ encryption aes-cbc-256
+ integrity sha256
+ group 14
+!
+crypto ikev2 policy MPLS-POLICY 
+ proposal MPLS-PROP
+!
+crypto ikev2 keyring MPLS-KEYRING
+ peer HQ-R1
+  address 1.2.16.1
+  pre-shared-key MPLSKEY
+ !
+!
+!
+crypto ikev2 profile MPLS-IKEV2
+ match identity remote address 1.2.16.1 255.255.255.255 
+ authentication remote pre-share
+ authentication local pre-share
+ keyring local MPLS-KEYRING
+ dpd 10 3 periodic
+!
+!
+!
+crypto ipsec transform-set MPLS-IPSEC esp-aes 256 esp-sha-hmac 
+ mode tunnel
+!
+crypto ipsec profile MPLS-PROFILE
+ set transform-set MPLS-IPSEC 
+ set ikev2-profile MPLS-IKEV2
+!
+!
+!
+!
+!
+!
+!
+interface Loopback0
+ no shutdown
+ ip address 1.2.17.1 255.255.255.255
+!
+interface Tunnel10
+ no shutdown
+ description MPLS VPN Tunnel
+ ip unnumbered Loopback0
+ ip ospf network point-to-point
+ ip ospf dead-interval 3
+ ip ospf hello-interval 1
+ ip ospf 17 area 0
+ ip ospf cost 10
+ tunnel source Loopback0
+ tunnel destination 1.2.16.1
+ tunnel protection ipsec profile MPLS-PROFILE
+!
+interface GigabitEthernet0/0
+ no shutdown
+ description Link to BR1-R2
+ ip address 172.17.0.13 255.255.255.252
+ ip ospf authentication key-chain BR1-OSPF
+ duplex auto
+ speed auto
+ media-type rj45
+!
+interface GigabitEthernet0/1
+ no shutdown
+ description Link HB-R2
+ ip address 172.18.0.13 255.255.255.252
+ duplex auto
+ speed auto
+ media-type rj45
+!
+interface GigabitEthernet0/2
+ no shutdown
+ description Link to BR1-FW1
+ ip address 172.17.0.6 255.255.255.252
+ duplex auto
+ speed auto
+ media-type rj45
+!
+interface GigabitEthernet0/3
+ no shutdown
+ description Link to BR1-C1
+ ip address 172.17.0.17 255.255.255.252
+ ip ospf authentication key-chain BR1-OSPF
+ duplex auto
+ speed auto
+ media-type rj45
+!
+!
+router eigrp BR1-HQ
+ !
+ address-family ipv4 unicast autonomous-system 17
+  !
+  topology base
+  exit-af-topology
+  network 1.2.17.1 0.0.0.0
+  network 172.18.0.12 0.0.0.3
+  eigrp router-id 1.2.17.1
+ exit-address-family
+!
+router ospf 17
+ router-id 1.2.17.1
+ auto-cost reference-bandwidth 1000
+ area 17 range 172.17.0.0 255.255.0.0
+ network 172.17.0.0 0.0.0.31 area 17
+!
+ip forward-protocol nd
+!
+!
+no ip http server
+no ip http secure-server
+ip route 172.16.0.0 255.255.0.0 172.17.0.5 200 track 1
+ip route 172.16.0.0 255.255.0.0 172.17.0.14 250
+ip ssh time-out 90
+ip ssh authentication-retries 5
+ip ssh version 2
+!
+ip sla 1
+ icmp-echo 172.17.0.5 source-interface GigabitEthernet0/2
+ frequency 5
+ip sla schedule 1 life forever start-time now
+ipv6 ioam timestamp
+!
+!
+!
+control-plane
+!
+!
+line con 0
+ exec-timeout 5 0
+ logging synchronous
+line aux 0
+ exec-timeout 5 0
+ login local
+line vty 0 4
+ exec-timeout 7 0
+ privilege level 15
+ login local
+ transport input ssh
+!
+no scheduler allocate
+!
+end

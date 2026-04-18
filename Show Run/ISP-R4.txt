@@ -1,0 +1,138 @@
+
+!
+version 15.7
+service timestamps debug datetime msec
+service timestamps log datetime msec
+no service password-encryption
+!
+hostname ISP-R4
+!
+boot-start-marker
+boot-end-marker
+!
+!
+!
+no aaa new-model
+!
+!
+!
+mmi polling-interval 60
+no mmi auto-configure
+no mmi pvc
+mmi snmp-timeout 180
+!
+!
+!
+!
+!
+!
+!
+!
+!
+!
+!
+!
+!
+!
+!
+
+
+!
+!
+!
+!
+no ip domain lookup
+ip cef
+no ipv6 cef
+!
+multilink bundle-name authenticated
+!
+!
+!
+!
+!
+!
+!
+!
+!
+!
+redundancy
+!
+!
+! 
+!
+!
+!
+!
+!
+!
+!
+!
+!
+!
+!
+!
+interface Ethernet0/0
+ no shutdown
+ description Link to ISP-R3
+ ip address 172.19.0.14 255.255.255.252
+ duplex auto
+!
+interface Ethernet0/1
+ no shutdown
+ description Link BR1-FW2
+ ip address 32.4.0.14 255.255.255.252
+ duplex auto
+!
+interface Ethernet0/2
+ no shutdown
+ no ip address
+ shutdown
+ duplex auto
+!
+interface Ethernet0/3
+ no shutdown
+ description Link to ISP-R2
+ ip address 172.19.0.10 255.255.255.252
+ duplex auto
+!
+!
+router eigrp ISP
+ !
+ address-family ipv4 unicast autonomous-system 19
+  !
+  topology base
+  exit-af-topology
+  network 32.4.0.12 0.0.0.3
+  network 172.19.0.8 0.0.0.3
+  network 172.19.0.12 0.0.0.3
+ exit-address-family
+!
+ip forward-protocol nd
+!
+!
+no ip http server
+no ip http secure-server
+!
+ipv6 ioam timestamp
+!
+!
+!
+control-plane
+!
+!
+!
+!
+!
+!
+!
+!
+line con 0
+ logging synchronous
+line aux 0
+line vty 0 4
+ login
+ transport input none
+!
+!
+end

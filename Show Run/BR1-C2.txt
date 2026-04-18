@@ -1,0 +1,219 @@
+!
+! Last configuration change at 20:18:00 UTC Wed Mar 11 2026
+!
+version 15.2
+service timestamps debug datetime msec
+service timestamps log datetime msec
+service password-encryption
+service compress-config
+!
+hostname BR1-C2
+!
+boot-start-marker
+boot-end-marker
+!
+!
+!
+username BR1-C2 privilege 15 secret 9 $9$qdc12.d0/wmoOv$gKHyLRydNOXhJaL7Sc7BUybpRLvcRIGSGKH5Ee5GKDM
+no aaa new-model
+!
+!
+!
+!
+!
+!
+!
+!
+no ip domain-lookup
+ip domain-name SFC.com
+ip cef
+no ipv6 cef
+!
+key chain BR1-OSPF
+ key 17
+   key-string 7 1435000A0207227A0407000504
+   cryptographic-algorithm hmac-sha-256
+!
+!
+!
+spanning-tree mode pvst
+spanning-tree extend system-id
+!
+!
+! 
+!
+!
+!
+!
+!
+!
+!
+!
+!
+!
+!
+!
+interface Port-channel1
+ no shutdown
+ no switchport
+ ip address 172.17.0.26 255.255.255.252
+ ip ospf authentication key-chain BR1-OSPF
+!
+interface Port-channel2
+ no shutdown
+ description Link to BR1-SW2
+ switchport trunk allowed vlan 10,20,30,40,99
+ switchport trunk encapsulation dot1q
+ switchport trunk native vlan 99
+ switchport mode trunk
+ switchport nonegotiate
+!
+interface GigabitEthernet0/0
+ no shutdown
+ description Link to BR1-C1
+ no switchport
+ no ip address
+ negotiation auto
+ channel-group 1 mode desirable
+!
+interface GigabitEthernet0/1
+ no shutdown
+ description Link to BR1-SW2
+ switchport trunk allowed vlan 10,20,30,40,99
+ switchport trunk encapsulation dot1q
+ switchport trunk native vlan 99
+ switchport mode trunk
+ switchport nonegotiate
+ negotiation auto
+ channel-group 2 mode desirable
+!
+interface GigabitEthernet0/2
+ no shutdown
+ description Link to BR1-SW2
+ switchport trunk allowed vlan 10,20,30,40,99
+ switchport trunk encapsulation dot1q
+ switchport trunk native vlan 99
+ switchport mode trunk
+ switchport nonegotiate
+ negotiation auto
+ channel-group 2 mode desirable
+!
+interface GigabitEthernet0/3
+ no shutdown
+ description Link to BR1-R2
+ no switchport
+ ip address 172.17.0.22 255.255.255.252
+ ip ospf authentication key-chain BR1-OSPF
+ negotiation auto
+!
+interface GigabitEthernet1/0
+ no shutdown
+ description Link to BR1-C1
+ no switchport
+ no ip address
+ negotiation auto
+ channel-group 1 mode desirable
+!
+interface GigabitEthernet1/1
+ no shutdown
+ description UNUSED PORT
+ switchport access vlan 999
+ switchport mode access
+ shutdown
+ negotiation auto
+!
+interface GigabitEthernet1/2
+ no shutdown
+ description Link to BR1-SW1
+ switchport access vlan 999
+ switchport trunk allowed vlan 10,20,30,40,99
+ switchport trunk encapsulation dot1q
+ switchport trunk native vlan 99
+ switchport mode trunk
+ switchport nonegotiate
+ shutdown
+ negotiation auto
+!
+interface GigabitEthernet1/3
+ no shutdown
+ description UNUSED PORT
+ switchport access vlan 999
+ switchport mode access
+ shutdown
+ negotiation auto
+!
+interface Vlan10
+ no shutdown
+ description Link for IT VLAN
+ ip address 172.17.10.2 255.255.255.0
+ glbp 10 ip 172.17.10.254
+!
+interface Vlan20
+ no shutdown
+ description Link for Administration VLAN
+ ip address 172.17.20.2 255.255.255.0
+ glbp 20 ip 172.17.20.254
+ glbp 20 priority 120
+ glbp 20 preempt
+!
+interface Vlan30
+ no shutdown
+ description Link for Finance VLAN
+ ip address 172.17.30.2 255.255.255.0
+ glbp 30 ip 172.17.30.254
+!
+interface Vlan40
+ no shutdown
+ description Link for HR VLAN
+ ip address 172.17.40.2 255.255.255.0
+ glbp 40 ip 172.17.40.254
+ glbp 40 priority 120
+ glbp 40 preempt
+!
+interface Vlan99
+ no shutdown
+ description Link for Management VLAN
+ ip address 172.17.99.2 255.255.255.0
+ glbp 99 ip 172.17.99.254
+!
+router ospf 17
+ router-id 1.3.17.2
+ auto-cost reference-bandwidth 1000
+ network 172.17.0.16 0.0.0.15 area 0
+ network 172.17.10.0 0.0.0.255 area 0
+ network 172.17.20.0 0.0.0.255 area 0
+ network 172.17.30.0 0.0.0.255 area 0
+ network 172.17.40.0 0.0.0.255 area 0
+ network 172.17.99.0 0.0.0.255 area 0
+!
+ip forward-protocol nd
+!
+ip http server
+ip http secure-server
+!
+ip ssh time-out 90
+ip ssh authentication-retries 5
+ip ssh version 2
+ip ssh server algorithm encryption aes128-ctr aes192-ctr aes256-ctr
+ip ssh client algorithm encryption aes128-ctr aes192-ctr aes256-ctr
+!
+!
+!
+!
+!
+!
+control-plane
+!
+!
+line con 0
+ exec-timeout 5 0
+ logging synchronous
+line aux 0
+ exec-timeout 5 0
+ login local
+line vty 0 4
+ exec-timeout 7 0
+ privilege level 15
+ login local
+ transport input ssh
+!

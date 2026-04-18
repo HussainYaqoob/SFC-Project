@@ -1,0 +1,223 @@
+!
+! Last configuration change at 01:43:36 UTC Sat Apr 11 2026
+!
+version 15.2
+service timestamps debug datetime msec
+service timestamps log datetime msec
+service password-encryption
+service compress-config
+!
+hostname HQ-C2
+!
+boot-start-marker
+boot-end-marker
+!
+!
+!
+username HQ-C2 privilege 15 secret 9 $9$pFt7apRCxOiPrP$b1jeSkc.tQBkTnMdeUgwthCxG/NRHyV6DD1CVDq1mS.
+no aaa new-model
+!
+!
+!
+!
+!
+!
+!
+!
+no ip domain-lookup
+ip domain-name SFC.com
+ip cef
+no ipv6 cef
+!
+key chain HQ-OSPF
+ key 16
+   key-string 7 04733A2620127C68
+   cryptographic-algorithm hmac-sha-256
+!
+!
+!
+spanning-tree mode pvst
+spanning-tree extend system-id
+!
+!
+! 
+!
+!
+!
+!
+!
+!
+!
+!
+!
+!
+!
+!
+interface Port-channel1
+ no shutdown
+ no switchport
+ ip address 172.16.0.30 255.255.255.252
+ ip ospf authentication key-chain HQ-OSPF
+!
+interface GigabitEthernet0/0
+ no shutdown
+ description Link to HQ-C2
+ no switchport
+ no ip address
+ negotiation auto
+ channel-group 1 mode desirable
+!
+interface GigabitEthernet0/1
+ no shutdown
+ description Link to HQ-C2
+ no switchport
+ no ip address
+ negotiation auto
+ channel-group 1 mode desirable
+!
+interface GigabitEthernet0/2
+ no shutdown
+ description Link to HQ-R2
+ no switchport
+ ip address 172.16.0.26 255.255.255.252
+ ip ospf authentication key-chain HQ-OSPF
+ negotiation auto
+!
+interface GigabitEthernet0/3
+ no shutdown
+ description Link to HQ-SW2
+ switchport trunk allowed vlan 10,20,30,40,50,99
+ switchport trunk encapsulation dot1q
+ switchport trunk native vlan 99
+ switchport mode trunk
+ switchport nonegotiate
+ negotiation auto
+!
+interface GigabitEthernet1/0
+ no shutdown
+ description UNUSED PORT
+ switchport access vlan 999
+ switchport mode access
+ shutdown
+ negotiation auto
+!
+interface GigabitEthernet1/1
+ no shutdown
+ description UNUSED PORT
+ switchport access vlan 999
+ switchport mode access
+ shutdown
+ negotiation auto
+!
+interface GigabitEthernet1/2
+ no shutdown
+ description UNUSED PORT
+ switchport access vlan 999
+ switchport mode access
+ shutdown
+ negotiation auto
+!
+interface GigabitEthernet1/3
+ no shutdown
+ description Link to HQ-SW1
+ switchport trunk allowed vlan 10,20,30,40,50,99
+ switchport trunk encapsulation dot1q
+ switchport trunk native vlan 99
+ switchport mode trunk
+ switchport nonegotiate
+ negotiation auto
+!
+interface Vlan10
+ no shutdown
+ description Link for IT VLAN
+ ip address 172.16.10.2 255.255.255.0
+ ip helper-address 172.16.50.10 
+ ip helper-address 172.16.50.12 
+ glbp 10 ip 172.16.10.254
+!
+interface Vlan20
+ no shutdown
+ description Link for Administration VLAN
+ ip address 172.16.20.2 255.255.255.0
+ ip helper-address 172.16.50.10 
+ ip helper-address 172.16.50.12 
+ glbp 20 ip 172.16.20.254
+ glbp 20 priority 120
+ glbp 20 preempt
+!
+interface Vlan30
+ no shutdown
+ description Link for Finance VLAN
+ ip address 172.16.30.2 255.255.255.0
+ ip helper-address 172.16.50.10 
+ ip helper-address 172.16.50.12 
+ glbp 30 ip 172.16.30.254
+!
+interface Vlan40
+ no shutdown
+ description Link for HR VLAN
+ ip address 172.16.40.2 255.255.255.0
+ ip helper-address 172.16.50.10 
+ ip helper-address 172.16.50.12 
+ glbp 40 ip 172.16.40.254
+ glbp 40 priority 120
+ glbp 40 preempt
+!
+interface Vlan50
+ no shutdown
+ description Link for Servers VLAN
+ ip address 172.16.50.2 255.255.255.0
+ glbp 50 ip 172.16.50.254
+!
+interface Vlan99
+ no shutdown
+ description Link for Management VLAN
+ ip address 172.16.99.2 255.255.255.0
+ glbp 99 ip 172.16.99.254
+ glbp 99 priority 120
+ glbp 99 preempt
+!
+router ospf 16
+ router-id 1.3.16.2
+ auto-cost reference-bandwidth 1000
+ network 172.16.0.24 0.0.0.7 area 16
+ network 172.16.10.0 0.0.0.255 area 16
+ network 172.16.20.0 0.0.0.255 area 16
+ network 172.16.30.0 0.0.0.255 area 16
+ network 172.16.40.0 0.0.0.255 area 16
+ network 172.16.50.0 0.0.0.255 area 16
+ network 172.16.99.0 0.0.0.255 area 16
+!
+ip forward-protocol nd
+!
+ip http server
+ip http secure-server
+!
+ip ssh time-out 90
+ip ssh authentication-retries 5
+ip ssh version 2
+ip ssh server algorithm encryption aes128-ctr aes192-ctr aes256-ctr
+ip ssh client algorithm encryption aes128-ctr aes192-ctr aes256-ctr
+!
+!
+logging trap debugging
+logging host 172.16.50.10
+!
+!
+!
+!
+control-plane
+!
+!
+line con 0
+ exec-timeout 5 0
+ logging synchronous
+line aux 0
+ exec-timeout 5 0
+ login local
+line vty 0 4
+ exec-timeout 7 0
+ privilege level 15
+ login local
+ transport input ssh
+!

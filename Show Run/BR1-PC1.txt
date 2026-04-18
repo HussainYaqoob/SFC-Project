@@ -1,0 +1,2 @@
+set pcname BR1-PC1
+dhcp

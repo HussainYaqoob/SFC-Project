@@ -1,0 +1,187 @@
+!
+! Last configuration change at 01:42:07 UTC Sat Apr 11 2026
+!
+version 15.2
+service timestamps debug datetime msec
+service timestamps log datetime msec
+service password-encryption
+service compress-config
+!
+hostname HQ-SW1
+!
+boot-start-marker
+boot-end-marker
+!
+!
+!
+username HQ-SW1 privilege 15 secret 9 $9$6jFN8hLYsHtWD9$CgLuK51F2gIfyxlOn0V58G66VAOFjDMkd02gLOh66Ik
+no aaa new-model
+!
+!
+!
+!
+!
+!
+!
+!
+no ip domain-lookup
+ip domain-name SFC.com
+ip cef
+no ipv6 cef
+!
+!
+!
+spanning-tree mode pvst
+spanning-tree extend system-id
+!
+!
+! 
+!
+!
+!
+!
+!
+!
+!
+!
+!
+!
+!
+!
+interface Port-channel1
+ no shutdown
+ description Link to HQ-SW2
+ switchport trunk allowed vlan 10,20,30,40,50,99
+ switchport trunk encapsulation dot1q
+ switchport trunk native vlan 99
+ switchport mode trunk
+ switchport nonegotiate
+!
+interface Port-channel2
+ no shutdown
+ description Link to HQ-SW3
+ switchport trunk allowed vlan 10,20,30,40,50,99
+ switchport trunk encapsulation dot1q
+ switchport trunk native vlan 99
+ switchport mode trunk
+ switchport nonegotiate
+!
+interface GigabitEthernet0/0
+ no shutdown
+ description Link to HQ-SW2
+ switchport trunk allowed vlan 10,20,30,40,50,99
+ switchport trunk encapsulation dot1q
+ switchport trunk native vlan 99
+ switchport mode trunk
+ switchport nonegotiate
+ negotiation auto
+ channel-group 1 mode active
+!
+interface GigabitEthernet0/1
+ no shutdown
+ description Link to HQ-SW2
+ switchport trunk allowed vlan 10,20,30,40,50,99
+ switchport trunk encapsulation dot1q
+ switchport trunk native vlan 99
+ switchport mode trunk
+ switchport nonegotiate
+ negotiation auto
+ channel-group 1 mode active
+!
+interface GigabitEthernet0/2
+ no shutdown
+ description UNUSED PORT
+ switchport access vlan 999
+ switchport mode access
+ shutdown
+ negotiation auto
+!
+interface GigabitEthernet0/3
+ no shutdown
+ description Link to HQ-C1
+ switchport trunk allowed vlan 10,20,30,40,50,99
+ switchport trunk encapsulation dot1q
+ switchport trunk native vlan 99
+ switchport mode trunk
+ switchport nonegotiate
+ negotiation auto
+!
+interface GigabitEthernet1/0
+ no shutdown
+ description Link to HQ-SW3
+ switchport trunk allowed vlan 10,20,30,40,50,99
+ switchport trunk encapsulation dot1q
+ switchport trunk native vlan 99
+ switchport mode trunk
+ switchport nonegotiate
+ negotiation auto
+ channel-group 2 mode active
+!
+interface GigabitEthernet1/1
+ no shutdown
+ description Link to HQ-SW3
+ switchport trunk allowed vlan 10,20,30,40,50,99
+ switchport trunk encapsulation dot1q
+ switchport trunk native vlan 99
+ switchport mode trunk
+ switchport nonegotiate
+ negotiation auto
+ channel-group 2 mode active
+!
+interface GigabitEthernet1/2
+ no shutdown
+ description UNUSED PORT
+ switchport access vlan 999
+ switchport mode access
+ shutdown
+ negotiation auto
+!
+interface GigabitEthernet1/3
+ no shutdown
+ description Link to HQ-C2
+ switchport trunk allowed vlan 10,20,30,40,50,99
+ switchport trunk encapsulation dot1q
+ switchport trunk native vlan 99
+ switchport mode trunk
+ switchport nonegotiate
+ negotiation auto
+!
+interface Vlan99
+ no shutdown
+ description Link to Management VLAN
+ ip address 172.16.99.101 255.255.255.0
+!
+ip default-gateway 172.16.99.254
+ip forward-protocol nd
+!
+ip http server
+ip http secure-server
+!
+ip ssh time-out 90
+ip ssh authentication-retries 5
+ip ssh version 2
+ip ssh server algorithm encryption aes128-ctr aes192-ctr aes256-ctr
+ip ssh client algorithm encryption aes128-ctr aes192-ctr aes256-ctr
+!
+!
+logging trap debugging
+logging host 172.16.50.10
+!
+!
+!
+!
+control-plane
+!
+!
+line con 0
+ exec-timeout 5 0
+ logging synchronous
+line aux 0
+ exec-timeout 5 0
+ login local
+line vty 0 4
+ exec-timeout 7 0
+ privilege level 15
+ login local
+ transport input ssh
+!

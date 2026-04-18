@@ -1,0 +1,163 @@
+!
+! Last configuration change at 20:41:43 UTC Fri Mar 13 2026
+!
+version 15.9
+service timestamps debug datetime msec
+service timestamps log datetime msec
+no service password-encryption
+!
+hostname HB-R1
+!
+boot-start-marker
+boot-end-marker
+!
+!
+!
+no aaa new-model
+!
+!
+!
+mmi polling-interval 60
+no mmi auto-configure
+no mmi pvc
+mmi snmp-timeout 180
+!
+!
+!
+!
+!
+!
+!
+!
+ip vrf HQ-BR1
+ rd 18:16
+ route-target export 16:17
+ route-target import 16:17
+!
+!
+!
+!
+no ip domain lookup
+ip cef
+no ipv6 cef
+!
+multilink bundle-name authenticated
+!
+!
+!
+!
+!
+redundancy
+!
+!
+! 
+!
+!
+!
+!
+!
+!
+!
+!
+!
+!
+!
+!
+interface Loopback0
+ no shutdown
+ ip address 1.1.18.1 255.255.255.255
+!
+interface GigabitEthernet0/0
+ no shutdown
+ description Link to HB-R2
+ ip address 172.18.0.1 255.255.255.252
+ duplex auto
+ speed auto
+ media-type rj45
+ mpls ip
+!
+interface GigabitEthernet0/1
+ no shutdown
+ no ip address
+ shutdown
+ duplex auto
+ speed auto
+ media-type rj45
+!
+interface GigabitEthernet0/2
+ no shutdown
+ description Link HQ-R2
+ ip vrf forwarding HQ-BR1
+ ip address 172.18.0.6 255.255.255.252
+ duplex auto
+ speed auto
+ media-type rj45
+!
+interface GigabitEthernet0/3
+ no shutdown
+ description Link to HQ-R1
+ ip vrf forwarding HQ-BR1
+ ip address 172.18.0.10 255.255.255.252
+ duplex auto
+ speed auto
+ media-type rj45
+!
+!
+router eigrp MPLS
+ !
+ address-family ipv4 unicast vrf HQ-BR1 autonomous-system 16
+  !
+  topology base
+   redistribute bgp 18 metric 64 1000 255 1 1500
+  exit-af-topology
+  network 172.18.0.4 0.0.0.3
+  network 172.18.0.8 0.0.0.3
+  eigrp router-id 1.1.18.1
+ exit-address-family
+!
+router ospf 18
+ network 1.1.18.1 0.0.0.0 area 0
+ network 172.18.0.0 0.0.0.3 area 0
+!
+router bgp 18
+ bgp router-id 1.1.18.1
+ bgp log-neighbor-changes
+ no bgp default ipv4-unicast
+ neighbor 1.1.18.2 remote-as 18
+ neighbor 1.1.18.2 update-source Loopback0
+ !
+ address-family ipv4
+  neighbor 1.1.18.2 activate
+ exit-address-family
+ !
+ address-family vpnv4
+  neighbor 1.1.18.2 activate
+  neighbor 1.1.18.2 send-community both
+ exit-address-family
+ !
+ address-family ipv4 vrf HQ-BR1
+  redistribute eigrp 16
+ exit-address-family
+!
+ip forward-protocol nd
+!
+!
+no ip http server
+no ip http secure-server
+!
+ipv6 ioam timestamp
+!
+!
+mpls ldp router-id Loopback0 force
+!
+control-plane
+!
+line con 0
+line aux 0
+line vty 0 4
+ login
+ transport input none
+!
+no scheduler allocate
+!
+end
